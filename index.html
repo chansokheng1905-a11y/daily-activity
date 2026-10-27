@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>កំណត់ហេតុជីវិត - Daily Life & Memory Journal (Cloud Sync)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Kantumruy Pro & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Kantumruy Pro"', '"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        luxury: {
+                            50: '#fbf7ee',
+                            100: '#f5edd6',
+                            500: '#c59a3f',
+                            600: '#a37b2c',
+                            700: '#7c5a1e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen font-sans transition-colors duration-300">
+
+    <!-- PIN Lock Screen Overlay -->
+    <div id="pinOverlay" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
+        <div id="pinBox" class="bg-white/10 border border-white/20 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl backdrop-blur-2xl">
+            <div class="w-16 h-16 rounded-2xl bg-luxury-500/20 text-luxury-500 flex items-center justify-center mx-auto text-2xl mb-4 border border-luxury-500/30">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2 class="text-xl font-bold text-white mb-1">កំណត់ហេតុជីវិត</h2>
+            <p class="text-xs text-slate-300 mb-6">សូមបញ្ចូលលេខកូដ PIN សម្ងាត់ (លំនាំដើម: 1234)</p>
+
+            <!-- PIN Dots -->
+            <div class="flex justify-center gap-3 mb-6">
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-luxury-500 bg-transparent transition-all"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-luxury-500 bg-transparent transition-all"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-luxury-500 bg-transparent transition-all"></div>
+                <div class="pin-dot w-4 h-4 rounded-full border-2 border-luxury-500 bg-transparent transition-all"></div>
+            </div>
+
+            <!-- Keypad -->
+            <div class="grid grid-cols-3 gap-3 max-w-[240px] mx-auto">
+                <button onclick="pressPin('1')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">1</button>
+                <button onclick="pressPin('2')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">2</button>
+                <button onclick="pressPin('3')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">3</button>
+                <button onclick="pressPin('4')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">4</button>
+                <button onclick="pressPin('5')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">5</button>
+                <button onclick="pressPin('6')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">6</button>
+                <button onclick="pressPin('7')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">7</button>
+                <button onclick="pressPin('8')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">8</button>
+                <button onclick="pressPin('9')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">9</button>
+                <button onclick="clearPin()" class="h-14 rounded-2xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-sm font-semibold border border-rose-500/30 active:scale-95 transition">C</button>
+                <button onclick="pressPin('0')" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-xl font-semibold border border-white/10 active:scale-95 transition">0</button>
+                <button onclick="deletePin()" class="h-14 rounded-2xl bg-white/5 hover:bg-white/15 text-white text-lg font-semibold border border-white/10 active:scale-95 transition"><i class="fa-solid fa-delete-left"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 glass border-b border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-luxury-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-luxury-500/20">
+                    <i class="fa-solid fa-book-bookmark text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-luxury-600 via-amber-600 to-yellow-600 bg-clip-text text-transparent dark:from-luxury-500 dark:to-yellow-400">
+                        កំណត់ហេតុជីវិត
+                    </h1>
+                    <div class="flex items-center space-x-2 text-xs">
+                        <span class="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            Cloud Synced (Online)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="lockScreen()" title="ចាក់សោភ្លាមៗ" class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-lock text-sm"></i>
+                </button>
+                <button onclick="openPinSettingModal()" title="ប្តូរលេខសម្ងាត់" class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-key text-sm"></i>
+                </button>
+                <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+        <!-- Dashboard Statistics -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="glass p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+                <div>
+                    <div id="statTotal" class="text-xl font-bold leading-tight">0</div>
+                    <div class="text-xs text-slate-500">កំណត់ត្រាសរុប</div>
+                </div>
+            </div>
+            <div class="glass p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+                <div>
+                    <div id="statFav" class="text-xl font-bold leading-tight">0</div>
+                    <div class="text-xs text-slate-500">ការចងចាំសំខាន់</div>
+                </div>
+            </div>
+            <div class="glass p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl bg-yellow-50 dark:bg-yellow-950/60 text-yellow-600 dark:text-yellow-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div>
+                    <div id="statRating" class="text-xl font-bold leading-tight">5.0</div>
+                    <div class="text-xs text-slate-500">ពិន្ទុមធ្យម</div>
+                </div>
+            </div>
+            <div class="glass p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-smile-beam"></i>
+                </div>
+                <div>
+                    <div id="statMood" class="text-xl font-bold leading-tight">😊</div>
+                    <div class="text-xs text-slate-500">អារម្មណ៍ញឹកញាប់</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Entry Form -->
+        <div class="glass p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+            <h2 class="text-sm font-semibold mb-3 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                <i class="fa-solid fa-pen-fancy text-luxury-600 dark:text-luxury-500"></i>
+                កត់ត្រាសកម្មភាពកន្លងមក (Record Past Activity)
+            </h2>
+            <form id="entryForm" onsubmit="handleAddEntry(event)" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-6">
+                        <input type="text" id="entryTitle" required placeholder="ចំណងជើងសកម្មភាព ឬរឿងរ៉ាវដែលបានកើតឡើង..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-luxury-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <input type="datetime-local" id="entryDateTime" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-luxury-500">
+                    </div>
+                    <div class="md:col-span-3">
+                        <select id="entryCategory" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-luxury-500">
+                            <option value="ការងារ">💼 ការងារ</option>
+                            <option value="ការសិក្សា/បង្រៀន" selected>📚 ការសិក្សា/បង្រៀន</option>
+                            <option value="ផ្ទាល់ខ្លួន">🧘 ផ្ទាល់ខ្លួន</option>
+                            <option value="គ្រួសារ">👨‍👩‍👧 គ្រួសារ</option>
+                            <option value="សុខភាព">🏃 សុខភាព</option>
+                            <option value="ដំណើរកម្សាន្ត">✈️ ដំណើរកម្សាន្ត</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-4 flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span class="text-xs text-slate-500">អារម្មណ៍:</span>
+                        <div class="flex gap-2">
+                            <label class="cursor-pointer text-lg"><input type="radio" name="mood" value="😊" checked class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😊</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="mood" value="🤩" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">🤩</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="mood" value="😌" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😌</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="mood" value="😴" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😴</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="mood" value="😔" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😔</span></label>
+                        </div>
+                    </div>
+                    <div class="md:col-span-4 flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <span class="text-xs text-slate-500">ពិន្ទុផ្កាយ:</span>
+                        <select id="entryRating" class="bg-transparent text-sm focus:outline-none">
+                            <option value="5">⭐⭐⭐⭐⭐ (៥/៥)</option>
+                            <option value="4">⭐⭐⭐⭐ (៤/៥)</option>
+                            <option value="3">⭐⭐⭐ (៣/៥)</option>
+                            <option value="2">⭐⭐ (២/៥)</option>
+                            <option value="1">⭐ (១/៥)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-4 flex items-center justify-end">
+                        <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-300">
+                            <input type="checkbox" id="entryFavorite" class="w-4 h-4 rounded text-rose-500 focus:ring-rose-400">
+                            <span>❤️ ដាក់ចំណាំការចងចាំសំខាន់</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <textarea id="entryNotes" rows="3" placeholder="ពិពណ៌នាលម្អិតអំពីអ្វីដែលបានកើតឡើង ឬមេរៀន/បទពិសោធន៍ដែលទទួលបាន..." class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-luxury-500"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <p class="text-xs text-slate-500"><i class="fa-solid fa-cloud text-emerald-500 mr-1"></i> ទិន្នន័យ Sync ស្វ័យប្រវត្តិតាម Cloud Firestore</p>
+                    <button type="submit" class="px-5 py-2.5 bg-luxury-600 hover:bg-luxury-700 text-white rounded-xl text-sm font-medium shadow-md shadow-luxury-500/20 transition flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> រក្សាទុកកំណត់ហេតុ
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="relative w-full sm:w-64">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-xs text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="handleSearch()" placeholder="ស្វែងរកកំណត់ត្រា..." class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs focus:outline-none focus:ring-2 focus:ring-luxury-500">
+            </div>
+            <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+                <button onclick="setFilter('all')" id="btnFilterAll" class="filter-tab active px-3.5 py-1.5 rounded-xl text-xs font-medium bg-luxury-600 text-white shadow-sm">ទាំងអស់</button>
+                <button onclick="setFilter('fav')" id="btnFilterFav" class="filter-tab px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">❤️ សំខាន់</button>
+            </div>
+        </div>
+
+        <!-- Timeline / Entry Cards Container -->
+        <div id="entryList" class="space-y-3"></div>
+
+    </main>
+
+    <!-- Modal: Edit Activity (បន្ថែមថ្មី) -->
+    <div id="editModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                <h3 class="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                    <i class="fa-solid fa-pen-to-square text-luxury-500"></i> កែសម្រួលសកម្មភាព (Edit Activity)
+                </h3>
+                <button onclick="closeEditModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <form id="editForm" onsubmit="handleSaveEdit(event)" class="space-y-4 text-xs">
+                <input type="hidden" id="editEntryId">
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-12">
+                        <label class="block text-slate-500 mb-1 font-semibold">ចំណងជើងសកម្មភាព៖</label>
+                        <input type="text" id="editTitle" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-medium text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-luxury-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-500 mb-1 font-semibold">កាលបរិច្ឆេទ & ម៉ោង៖</label>
+                        <input type="datetime-local" id="editDateTime" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-medium text-slate-800 dark:text-slate-200 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-500 mb-1 font-semibold">ប្រភេទសកម្មភាព៖</label>
+                        <select id="editCategory" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-medium text-slate-800 dark:text-slate-200 focus:outline-none">
+                            <option value="ការងារ">💼 ការងារ</option>
+                            <option value="ការសិក្សា/បង្រៀន">📚 ការសិក្សា/បង្រៀន</option>
+                            <option value="ផ្ទាល់ខ្លួន">🧘 ផ្ទាល់ខ្លួន</option>
+                            <option value="គ្រួសារ">👨‍👩‍👧 គ្រួសារ</option>
+                            <option value="សុខភាព">🏃 សុខភាព</option>
+                            <option value="ដំណើរកម្សាន្ត">✈️ ដំណើរកម្សាន្ត</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 bg-slate-50 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    <div class="md:col-span-5 flex items-center gap-2">
+                        <span class="text-slate-500 font-semibold">អារម្មណ៍:</span>
+                        <div class="flex gap-2">
+                            <label class="cursor-pointer text-lg"><input type="radio" name="editMood" value="😊" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😊</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="editMood" value="🤩" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">🤩</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="editMood" value="😌" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😌</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="editMood" value="😴" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😴</span></label>
+                            <label class="cursor-pointer text-lg"><input type="radio" name="editMood" value="😔" class="hidden peer"><span class="peer-checked:scale-125 peer-checked:opacity-100 opacity-40 inline-block transition">😔</span></label>
+                        </div>
+                    </div>
+                    <div class="md:col-span-4 flex items-center gap-2">
+                        <span class="text-slate-500 font-semibold">ពិន្ទុ:</span>
+                        <select id="editRating" class="bg-transparent text-xs font-semibold focus:outline-none">
+                            <option value="5">⭐⭐⭐⭐⭐ (៥/៥)</option>
+                            <option value="4">⭐⭐⭐⭐ (៤/៥)</option>
+                            <option value="3">⭐⭐⭐ (៣/៥)</option>
+                            <option value="2">⭐⭐ (២/៥)</option>
+                            <option value="1">⭐ (១/៥)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3 flex items-center justify-end">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" id="editFavorite" class="w-4 h-4 rounded text-rose-500 focus:ring-rose-400">
+                            <span class="text-rose-500 font-semibold">❤️ សំខាន់</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-500 mb-1 font-semibold">ការពិពណ៌នាលម្អិត / មេរៀនដែលទទួលបាន៖</label>
+                    <textarea id="editNotes" rows="3" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-luxury-500 leading-relaxed"></textarea>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 py-2.5 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition">បោះបង់</button>
+                    <button type="submit" class="flex-1 py-2.5 text-xs font-semibold rounded-xl bg-luxury-600 hover:bg-luxury-700 text-white shadow-md shadow-luxury-500/20 transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> រក្សាទុកការកែប្រែ
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PIN Change Modal -->
+    <div id="pinModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+            <h3 class="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                <i class="fa-solid fa-key text-luxury-500"></i> ប្តូរលេខកូដ PIN សម្ងាត់
+            </h3>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-500 mb-1">PIN ចាស់:</label>
+                    <input type="password" id="oldPinInput" maxlength="4" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-center tracking-widest">
+                </div>
+                <div>
+                    <label class="block text-slate-500 mb-1">PIN ថ្មី (៤ ខ្ទង់):</label>
+                    <input type="password" id="newPinInput" maxlength="4" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 font-mono text-center tracking-widest">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="closePinModal()" class="flex-1 py-2 text-xs font-medium rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">បោះបង់</button>
+                <button onclick="saveNewPin()" class="flex-1 py-2 text-xs font-medium rounded-xl bg-luxury-600 hover:bg-luxury-700 text-white shadow-md">រក្សាទុក</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Config of Chan
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBTmY6YKLmpQ4mqAZm96P39IYtR4uQvtE",
+            authDomain: "my-planner-app-e9576.firebaseapp.com",
+            projectId: "my-planner-app-e9576",
+            storageBucket: "my-planner-app-e9576.firebasestorage.app",
+            messagingSenderId: "820137960838",
+            appId: "1:820137960838:web:df39f02662e2aff521b807",
+            measurementId: "G-9LCSDVH7C5"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = firebase.firestore();
+
+        // State
+        let entries = [];
+        let currentFilter = 'all';
+        let searchQuery = '';
+        let enteredPin = '';
+        const savedPin = localStorage.getItem('journal_pin') || '1234';
+
+        // Set default datetime to now
+        window.addEventListener('DOMContentLoaded', () => {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('entryDateTime').value = now.toISOString().slice(0, 16);
+            listenToEntries();
+        });
+
+        // Real-time listener for Journal
+        function listenToEntries() {
+            db.collection('journal_entries').orderBy('dateTime', 'desc').onSnapshot((snapshot) => {
+                entries = [];
+                snapshot.forEach((doc) => {
+                    entries.push({ id: doc.id, ...doc.data() });
+                });
+                renderEntries();
+                updateStats();
+            }, (err) => {
+                console.error("Firestore error:", err);
+            });
+        }
+
+        // Add Entry
+        async function handleAddEntry(e) {
+            e.preventDefault();
+            const title = document.getElementById('entryTitle').value.trim();
+            const dateTime = document.getElementById('entryDateTime').value;
+            const category = document.getElementById('entryCategory').value;
+            const mood = document.querySelector('input[name="mood"]:checked').value;
+            const rating = parseInt(document.getElementById('entryRating').value);
+            const favorite = document.getElementById('entryFavorite').checked;
+            const notes = document.getElementById('entryNotes').value.trim();
+
+            if (!title || !dateTime) return;
+
+            await db.collection('journal_entries').add({
+                title,
+                dateTime,
+                category,
+                mood,
+                rating,
+                favorite,
+                notes,
+                createdAt: new Date().toISOString()
+            });
+
+            document.getElementById('entryTitle').value = '';
+            document.getElementById('entryNotes').value = '';
+            document.getElementById('entryFavorite').checked = false;
+        }
+
+        // ================= EDIT ACTIVITY FUNCTIONS (បន្ថែមថ្មី) =================
+        function openEditModal(id) {
+            const item = entries.find(e => e.id === id);
+            if (!item) return;
+
+            document.getElementById('editEntryId').value = id;
+            document.getElementById('editTitle').value = item.title || '';
+            document.getElementById('editDateTime').value = item.dateTime || '';
+            document.getElementById('editCategory').value = item.category || 'ការសិក្សា/បង្រៀន';
+            document.getElementById('editRating').value = item.rating || 5;
+            document.getElementById('editFavorite').checked = !!item.favorite;
+            document.getElementById('editNotes').value = item.notes || '';
+
+            // Check the radio mood
+            const moodRadios = document.querySelectorAll('input[name="editMood"]');
+            moodRadios.forEach(radio => {
+                radio.checked = (radio.value === (item.mood || '😊'));
+            });
+
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editModal').classList.add('flex');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
+            document.getElementById('editForm').reset();
+        }
+
+        async function handleSaveEdit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editEntryId').value;
+            if (!id) return;
+
+            const title = document.getElementById('editTitle').value.trim();
+            const dateTime = document.getElementById('editDateTime').value;
+            const category = document.getElementById('editCategory').value;
+            const moodRadio = document.querySelector('input[name="editMood"]:checked');
+            const mood = moodRadio ? moodRadio.value : '😊';
+            const rating = parseInt(document.getElementById('editRating').value) || 5;
+            const favorite = document.getElementById('editFavorite').checked;
+            const notes = document.getElementById('editNotes').value.trim();
+
+            if (!title || !dateTime) return;
+
+            await db.collection('journal_entries').doc(id).update({
+                title,
+                dateTime,
+                category,
+                mood,
+                rating,
+                favorite,
+                notes,
+                updatedAt: new Date().toISOString()
+            });
+
+            closeEditModal();
+        }
+
+        // Toggle Favorite
+        async function toggleFavorite(id, currentStatus) {
+            await db.collection('journal_entries').doc(id).update({
+                favorite: !currentStatus
+            });
+        }
+
+        // Delete Entry
+        async function deleteEntry(id) {
+            if (!confirm('តើអ្នកប្រាកដជាចង់លុបកំណត់ត្រានេះមែនទេ?')) return;
+            await db.collection('journal_entries').doc(id).delete();
+        }
+
+        // Render Entries
+        function renderEntries() {
+            const list = document.getElementById('entryList');
+            list.innerHTML = '';
+
+            let filtered = entries;
+            if (currentFilter === 'fav') filtered = filtered.filter(e => e.favorite);
+            if (searchQuery) {
+                filtered = filtered.filter(e => 
+                    e.title.toLowerCase().includes(searchQuery) || 
+                    (e.notes && e.notes.toLowerCase().includes(searchQuery)) ||
+                    e.category.toLowerCase().includes(searchQuery)
+                );
+            }
+
+            if (filtered.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-12 glass rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                        <i class="fa-regular fa-folder-open text-4xl text-slate-300 dark:text-slate-600 mb-2"></i>
+                        <p class="text-sm text-slate-500">គ្មានកំណត់ត្រាក្នុងបញ្ជីនេះឡើយ</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "glass p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-3 transition";
+
+                const stars = '⭐'.repeat(item.rating || 5);
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <span class="text-3xl">${item.mood || '😊'}</span>
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 dark:text-slate-100 leading-tight">${item.title}</h3>
+                                <div class="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-500">
+                                    <span class="px-2 py-0.5 rounded-md bg-luxury-50 dark:bg-luxury-950/60 text-luxury-700 dark:text-luxury-400 font-medium">${item.category}</span>
+                                    <span><i class="fa-regular fa-clock mr-1"></i>${new Date(item.dateTime).toLocaleString('km-KH', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                    <span>${stars}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button onclick="openEditModal('${item.id}')" title="កែសម្រួលសកម្មភាព" class="p-2 text-sm text-slate-400 dark:text-slate-500 hover:text-amber-500 dark:hover:text-amber-400 transition">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="toggleFavorite('${item.id}', ${item.favorite})" title="ចំណាំសំខាន់" class="p-2 text-sm ${item.favorite ? 'text-rose-500' : 'text-slate-300 dark:text-slate-600 hover:text-rose-400'} transition">
+                                <i class="${item.favorite ? 'fa-solid' : 'fa-regular'} fa-heart"></i>
+                            </button>
+                            <button onclick="deleteEntry('${item.id}')" title="លុប" class="p-2 text-sm text-slate-300 dark:text-slate-600 hover:text-rose-500 transition">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                    ${item.notes ? `<p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-50/60 dark:bg-slate-900/60 p-3 rounded-xl whitespace-pre-wrap leading-relaxed">${item.notes}</p>` : ''}
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        // Stats Update
+        function updateStats() {
+            const total = entries.length;
+            const favCount = entries.filter(e => e.favorite).length;
+            const avgRating = total > 0 ? (entries.reduce((acc, cur) => acc + (cur.rating || 5), 0) / total).toFixed(1) : '5.0';
+
+            // Find most frequent mood
+            const moodCounts = {};
+            entries.forEach(e => { moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1; });
+            let topMood = '😊';
+            let maxCount = 0;
+            for (const m in moodCounts) {
+                if (moodCounts[m] > maxCount) {
+                    maxCount = moodCounts[m];
+                    topMood = m;
+                }
+            }
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statFav').innerText = favCount;
+            document.getElementById('statRating').innerText = avgRating;
+            document.getElementById('statMood').innerText = topMood;
+        }
+
+        // PIN Keypad Handlers
+        function pressPin(digit) {
+            if (enteredPin.length < 4) {
+                enteredPin += digit;
+                updatePinDots();
+                if (enteredPin.length === 4) {
+                    verifyPin();
+                }
+            }
+        }
+        function deletePin() {
+            enteredPin = enteredPin.slice(0, -1);
+            updatePinDots();
+        }
+        function clearPin() {
+            enteredPin = '';
+            updatePinDots();
+        }
+        function updatePinDots() {
+            const dots = document.querySelectorAll('.pin-dot');
+            dots.forEach((dot, idx) => {
+                if (idx < enteredPin.length) {
+                    dot.classList.add('bg-luxury-500');
+                } else {
+                    dot.classList.remove('bg-luxury-500');
+                }
+            });
+        }
+        function verifyPin() {
+            const activePin = localStorage.getItem('journal_pin') || '1234';
+            if (enteredPin === activePin) {
+                document.getElementById('pinOverlay').classList.add('hidden');
+                clearPin();
+            } else {
+                const box = document.getElementById('pinBox');
+                box.classList.add('shake-animation');
+                setTimeout(() => {
+                    box.classList.remove('shake-animation');
+                    clearPin();
+                }, 400);
+            }
+        }
+        function lockScreen() {
+            clearPin();
+            document.getElementById('pinOverlay').classList.remove('hidden');
+        }
+
+        // PIN Settings Modal
+        function openPinSettingModal() {
+            document.getElementById('pinModal').classList.remove('hidden');
+            document.getElementById('pinModal').classList.add('flex');
+        }
+        function closePinModal() {
+            document.getElementById('pinModal').classList.add('hidden');
+            document.getElementById('pinModal').classList.remove('flex');
+            document.getElementById('oldPinInput').value = '';
+            document.getElementById('newPinInput').value = '';
+        }
+        function saveNewPin() {
+            const activePin = localStorage.getItem('journal_pin') || '1234';
+            const oldPin = document.getElementById('oldPinInput').value.trim();
+            const newPin = document.getElementById('newPinInput').value.trim();
+
+            if (oldPin !== activePin) {
+                alert('PIN ចាស់មិនត្រឹមត្រូវឡើយ!');
+                return;
+            }
+            if (newPin.length !== 4 || isNaN(newPin)) {
+                alert('PIN ថ្មីត្រូវតែមានលេខ ៤ ខ្ទង់!');
+                return;
+            }
+            localStorage.setItem('journal_pin', newPin);
+            alert('ប្តូរ PIN ជោគជ័យ!');
+            closePinModal();
+        }
+
+        // Filters & Search
+        function setFilter(f) {
+            currentFilter = f;
+            document.querySelectorAll('.filter-tab').forEach(b => {
+                b.className = "filter-tab px-3.5 py-1.5 rounded-xl text-xs font-medium bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700";
+            });
+            if (f === 'all') document.getElementById('btnFilterAll').className = "filter-tab active px-3.5 py-1.5 rounded-xl text-xs font-medium bg-luxury-600 text-white shadow-sm";
+            if (f === 'fav') document.getElementById('btnFilterFav').className = "filter-tab active px-3.5 py-1.5 rounded-xl text-xs font-medium bg-luxury-600 text-white shadow-sm";
+            renderEntries();
+        }
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            renderEntries();
+        }
+
+        // Theme Toggle
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
+        }
+    </script>
+</body>
+</html>
